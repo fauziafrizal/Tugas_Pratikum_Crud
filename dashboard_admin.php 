@@ -1,0 +1,18 @@
+<?php
+session_start();
+if (!isset($_SESSION['username']) || $_SESSION['level'] != 0) {
+    header("Location: ../index.php");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h2>Selamat datang, Admin <?= htmlspecialchars($_SESSION['username']) ?></h2>
+    <p><a href="../logout.php">Logout</a></p>
+</body>
+</html>

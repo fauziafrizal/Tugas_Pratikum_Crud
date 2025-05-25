@@ -1,12 +1,26 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 require_once 'Pasien.php';
+require_once 'class/User.php';
+
+// Cek login
+if (!isset($_SESSION['username']) || !isset($_SESSION['level'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Optional: Batasi akses jika user bukan admin (level 0)
+if ($_SESSION['level'] != 0 && $_SESSION['level'] != 1) {
+    echo "Akses ditolak.";
+    exit();
+}
 
 $pasien = new Pasien();
 
-
+// Hapus data jika ada permintaan
 if (isset($_GET['hapus_id'])) {
     $id_hapus = (int)$_GET['hapus_id'];
     $pasien->hapusData($id_hapus);
@@ -18,13 +32,11 @@ if (isset($_GET['hapus_id'])) {
 $data = $pasien->ambilData();
 ?>
 
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Pasien Klinik</title>
-   
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
@@ -57,7 +69,7 @@ $data = $pasien->ambilData();
         }
         @media (max-width: 768px) {
             .sidebar {
-                position: absolute;
+                position: relative;
                 width: 100%;
                 height: auto;
                 padding-top: 0;
@@ -71,15 +83,18 @@ $data = $pasien->ambilData();
 </head>
 <body>
 
-   
     <div class="sidebar d-none d-md-block">
         <h4 class="text-center py-3">Klinik Sehat</h4>
-        <a href="#">Dashboard</a>
-        <a href="crud/tambah.php">Tambah Pasien</a>
-        
+        <a href="index.php"><i class="bi bi-house-door"></i> Dashboard</a>
+        <a href="crud/tambah.php"><i class="bi bi-person-plus"></i> Tambah Pasien</a>
+        <a href="../logout.php" onclick="return confirm('Anda yakin ingin logout?')">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+        <div class="text-center mt-4" style="font-size: 14px;">
+            Login sebagai: <strong><?= htmlspecialchars($_SESSION['username']); ?></strong>
+        </div>
     </div>
 
-    
     <div class="content">
         <div class="container-fluid">
             <h2 class="mb-4">Dashboard Data Pasien</h2>
@@ -97,28 +112,31 @@ $data = $pasien->ambilData();
                                 </tr>
                             </thead>
                             <tbody>
-    <?php while ($row = $data->fetch_assoc()): ?>
-        <tr>
-            <td><?= htmlspecialchars($row['id_pasien']) ?></td>
-            <td><?= htmlspecialchars($row['nama']) ?></td>
-            <td><?= htmlspecialchars($row['umur']) ?></td>
-            <td><?= htmlspecialchars($row['keluhan']) ?></td>
-            <td>
-                <a href="crud/ubah.php?id=<?= $row['id_pasien'] ?>" class="btn btn-sm btn-warning" title="Edit">
-                    <i class="bi bi-pencil-square"></i> 
-                </a>
-                <a href="?hapus_id=<?= $row['id_pasien'] ?>" 
-   class="btn btn-sm btn-danger" 
-   title="Hapus"
-   onclick="return confirm('Apakah Anda yakin ingin menghapus data pasien ini?');">
-    <i class="bi bi-trash"></i> 
-</a>
-
-            </td>
-        </tr>
-    <?php endwhile; ?>
-</tbody>
-
+                                <?php while ($row = $data->fetch_assoc()): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['id_pasien']) ?></td>
+                                        <td><?= htmlspecialchars($row['nama']) ?></td>
+                                        <td><?= htmlspecialchars($row['umur']) ?></td>
+                                        <td><?= htmlspecialchars($row['keluhan']) ?></td>
+                                        <td>
+                                            <a href="crud/ubah.php?id=<?= $row['id_pasien'] ?>" class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="bi bi-pencil-square"></i> 
+                                            </a>
+                                            <a href="?hapus_id=<?= $row['id_pasien'] ?>" 
+                                               class="btn btn-sm btn-danger" 
+                                               title="Hapus"
+                                               onclick="return confirm('Apakah Anda yakin ingin menghapus data pasien ini?');">
+                                                <i class="bi bi-trash"></i> 
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                                <?php if ($data->num_rows === 0): ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Belum ada data pasien.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -126,7 +144,6 @@ $data = $pasien->ambilData();
         </div>
     </div>
 
-   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
